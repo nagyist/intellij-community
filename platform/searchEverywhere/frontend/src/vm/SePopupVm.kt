@@ -43,6 +43,7 @@ class SePopupVm(
   initialTabIndex: String,
   private val historyList: SearchHistoryList,
   private val availableLegacyContributors: Map<SeProviderId, SearchEverywhereContributor<Any>>,
+  private val onShowFindToolWindow: (SePopupVm) -> Unit,
   private val closePopupHandler: () -> Unit,
 ) {
   private val _searchPattern: MutableStateFlow<String> = MutableStateFlow("")
@@ -157,7 +158,7 @@ class SePopupVm(
 
     if (PreviewExperiment.isExperimentEnabled && previewFetcher != null) {
       previewConfigurationFlow = combine(currentTabFlow, showPreviewSetting) { tabVm, previewSetting ->
-        tabVm.isPreviewEnabled() to previewSetting
+        tabVm.isPreviewEnabled.getValue() to previewSetting
       }.mapLatest { (tabPreviewEnabled, previewSetting) ->
         if (tabPreviewEnabled) {
           if (previewSetting) SePreviewConfiguration(previewFetcher.project, this::fetchPreview)
@@ -249,10 +250,12 @@ class SePopupVm(
     return previewFetcher?.fetchPreview(usages)
   }
 
-  inner class ShowInFindToolWindowAction(private val onShowFindToolWindow: () -> Unit) : DumbAwareAction(IdeBundle.messagePointer("show.in.find.window.button.name"),
-                                                                                                         IdeBundle.messagePointer("show.in.find.window.button.description")) {
+  private val popupVm = this
+
+  inner class ShowInFindToolWindowAction : DumbAwareAction(IdeBundle.messagePointer("show.in.find.window.button.name"),
+                                                           IdeBundle.messagePointer("show.in.find.window.button.description")) {
     override fun actionPerformed(e: AnActionEvent) {
-      onShowFindToolWindow()
+      onShowFindToolWindow(popupVm)
       closePopup()
     }
 
